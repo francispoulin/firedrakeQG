@@ -94,15 +94,15 @@ q = TrialFunction(Vdg)
 p = TestFunction(Vdg)
 a_mass = p*q*dx
 a_int  = (dot(grad(p), -gradperp(psi0)*q) + beta*p*psi0.dx(0))*dx
-a_flux = (dot(jump(p), un('+')*q('+') - un('-')*q('-')) )*dS
+a_flux = (dot(jump(p), un('+')*q('+') - un('-')*q('-')) )*(dS_h + dS_v)
 arhs   = a_mass - dt*(a_int + a_flux)
 
 q_problem = LinearVariationalProblem(a_mass, action(arhs,q1), dq1)
 q_solver  = LinearVariationalSolver(q_problem, 
                                     solver_parameters={
-        'ksp_type':'cg',
-        'pc_type':'sor'
-        })
+                                        'ksp_type':'cg',
+                                        'pc_type':'sor'
+                                    })
 
 
 gradperp_h = lambda u: as_vector((-u.dx(1), u.dx(0)))
