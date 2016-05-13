@@ -112,7 +112,7 @@ outfile = File("output.pvd")
 outfile.write(q0, psi0, v)
 
 t = 0.
-T = 10.
+T = 1000.
 dumpfreq = 50
 tdump = 0
 
