@@ -107,14 +107,11 @@ q_solver  = LinearVariationalSolver(q_problem,
         })
 
 
-qfile = File("q.pvd")
-qfile << q0
-psifile = File("psi.pvd")
-psifile << psi0
-vfile = File("v.pvd")
 gradperp_h = lambda u: as_vector((-u.dx(1), u.dx(0)))
 v = Function(Vu).project(gradperp_h(psi0))
-vfile << v
+
+outfile = File("output.pvd")
+outfile.write(q0, psi0, v)
 
 t = 0.
 T = 10.
@@ -150,7 +147,5 @@ while(t < (T-Dt/2)):
     tdump += 1
     if(tdump==dumpfreq):
         tdump -= dumpfreq
-        qfile.write(q0)
-        #psifile.write(psi0)
-        #v.project(gradperp(psi0))
-        #vfile.write(v)
+        v.project(gradperp_h(psi0))
+        outfile.write(q0, psi0, v)
