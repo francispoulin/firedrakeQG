@@ -33,7 +33,7 @@ Vcg = FunctionSpace(mesh,"CG",1)               # CG elements for Streamfunction
 Vu  = VectorFunctionSpace(mesh,"DG",1, dim=2)  # DG elements for velocity
 
 # Intial Conditions for PV
-q0 = Function(Vdg).interpolate(Expression("0.0"))
+q0 = Function(Vdg, name='pv').interpolate(Expression("0.0"))
 q0.dat.data[:] += 0.1*np.random.randn(q0.dof_dset.size)
 
 q0.dat.data[:] += 0.1*np.random.randn(q0.dof_dset.size)
@@ -45,7 +45,7 @@ dq1 = Function(Vdg)       # PV fields for different time steps
 qh  = Function(Vdg)
 q1  = Function(Vdg)
 
-psi0 = Function(Vcg)      # Streamfunctions for different time steps
+psi0 = Function(Vcg, name='streamfunction')      # Streamfunctions for different time steps
 psi1 = Function(Vcg)
 
 # Physical parameters
@@ -106,7 +106,7 @@ q_solver  = LinearVariationalSolver(q_problem,
 
 
 gradperp_h = lambda u: as_vector((-u.dx(1), u.dx(0)))
-v = Function(Vu).project(gradperp_h(psi0))
+v = Function(Vu, name='velocity').project(gradperp_h(psi0))
 
 outfile = File("output.pvd")
 outfile.write(q0, psi0, v)
