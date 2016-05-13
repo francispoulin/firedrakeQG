@@ -81,7 +81,7 @@ psi_solver = LinearVariationalSolver(psi_problem,
         })
 
 # Make a gradperp operator
-gradperp = lambda u: as_vector((-u.dx(1), u.dx(0)))
+gradperp = lambda u: as_vector((-u.dx(1), u.dx(0), 0.0))
 
 # Set up Strong Stability Preserving Runge Kutta 3 (SSPRK3) method
 
@@ -112,7 +112,8 @@ qfile << q0
 psifile = File("psi.pvd")
 psifile << psi0
 vfile = File("v.pvd")
-v = Function(Vu).project(gradperp(psi0))
+gradperp_h = lambda u: as_vector((-u.dx(1), u.dx(0)))
+v = Function(Vu).project(gradperp_h(psi0))
 vfile << v
 
 t = 0.
