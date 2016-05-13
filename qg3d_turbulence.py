@@ -37,11 +37,9 @@ q0 = Function(Vdg).interpolate(Expression("0.0"))
 q0.dat.data[:] += 0.1*np.random.randn(q0.dof_dset.size)
 
 q0.dat.data[:] += 0.1*np.random.randn(q0.dof_dset.size)
-Area = Lx*Ly
-#print assemble(q0*dx)/Area
-qmean = assemble(q0*dx)/Area
+vol = Lx*Ly*Lz
+qmean = assemble(q0*dx)/vol
 q0 -= qmean
-#print assemble(q0*dx)/Area
 
 dq1 = Function(Vdg)       # PV fields for different time steps
 qh  = Function(Vdg)
@@ -76,9 +74,9 @@ bc1 = [DirichletBC(Vcg, 0.0, 1),
 psi_problem = LinearVariationalProblem(Apsi,Lpsi,psi0)
 psi_solver = LinearVariationalSolver(psi_problem,
                                      solver_parameters={
-        'ksp_type':'cg',
-        'pc_type':'sor'
-        })
+                                         'ksp_type':'cg',
+                                         'pc_type':'sor'
+                                     })
 
 # Make a gradperp operator
 gradperp = lambda u: as_vector((-u.dx(1), u.dx(0), 0.0))
