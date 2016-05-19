@@ -18,8 +18,8 @@ import sys
 Lx   = 2.*pi                                     # Zonal length
 Ly   = 2.*pi                                     # Meridonal length
 Lz   = 2.*pi                                     # Meridonal length
-n0   = 50                                        # Resolution in horizontal
-nz   = 50                                        # Resolution in vertical
+n0   = 100                                        # Resolution in horizontal
+nz   = 100                                        # Resolution in vertical
 dz   = Lz/nz                                     
 
 # Define a 2D mesh for the horiozntal
@@ -35,7 +35,8 @@ Uj = 1.0
 yc = pi
 Lj = Ly/10.
 q0 = Function(Vdg, name='pv').interpolate(Expression("-2.*Uj/Lj*tanh((x[1]-yc)/Lj)/pow(cosh((x[1]-yc)/Lj),2)",Uj=Uj, Lj=Lj, yc=yc))
-q0.dat.data[:] += 0.01*Uj*np.random.randn(*q0.dat.shape)
+V = q0.function_space()
+q0.dat.data[:] += 0.01*Uj*np.random.randn(V.dof_dset.size, *V.shape)
 
 dq1 = Function(Vdg)       # PV fields for different time steps
 qh  = Function(Vdg)
