@@ -145,8 +145,9 @@ while(t < (T-Dt/2)):
     kinetic_energy = assemble(0.5*dot(gradperp(psi0), gradperp(psi0))*dx)
     potential_energy = assemble(0.5*F*psi0*psi0*dx)
     total_energy = kinetic_energy + potential_energy
-    
-    print t, kinetic_energy, potential_energy, total_energy
+    enstrophy = assemble(0.5*q0*q0*dx)
+
+    print t, kinetic_energy, potential_energy, total_energy, enstrophy
 
     tdump += 1
     if(tdump==dumpfreq):
