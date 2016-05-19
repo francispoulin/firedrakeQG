@@ -140,7 +140,13 @@ while(t < (T-Dt/2)):
     
     # Store solutions to xml and pvd
     t +=Dt
-    print t
+
+    # calculate energy and enstrophy:
+    kinetic_energy = assemble(0.5*dot(gradperp(psi0), gradperp(psi0))*dx)
+    potential_energy = assemble(0.5*F*psi0*psi0*dx)
+    total_energy = kinetic_energy + potential_energy
+    
+    print t, kinetic_energy, potential_energy, total_energy
 
     tdump += 1
     if(tdump==dumpfreq):
