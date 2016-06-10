@@ -32,8 +32,8 @@ beta = Constant(0.0)      # beta plane coefficient
 
 # Intial Conditions for PV
 
-qb = Function(Vdg, name='pvbg').interpolate(Expression("U0*((pow(x[0]-1.0,2)+pow(x[1]-1.0,2)-Lv*Lv)/pow(Lv,3)-0.25*Lv*F)*exp(-(pow(x[0]-1.0,2)+pow(x[1]-1.0,2))/(Lv*Lv))", U0 = U0, Lv = Lv, F = F))
-q0 = Function(Vdg, name='pv').assign(qb)
+q_basic = Function(Vdg, name='pvbg').interpolate(Expression("U0*((pow(x[0]-1.0,2)+pow(x[1]-1.0,2)-Lv*Lv)/pow(Lv,3)-0.25*Lv*F)*exp(-(pow(x[0]-1.0,2)+pow(x[1]-1.0,2))/(Lv*Lv))", U0 = U0, Lv = Lv, F = F))
+q0 = Function(Vdg, name='pv').assign(q_basic)
 q0.dat.data[:] += 1e-4*np.random.randn(q0.dof_dset.size)
 
 dq1 = Function(Vdg)       # PV fields for different time steps
@@ -98,10 +98,9 @@ q_solver  = LinearVariationalSolver(q_problem,
 gradperp_h = lambda u: as_vector((-u.dx(1), u.dx(0)))
 v = Function(Vu, name='velocity').project(gradperp_h(psi0))
 
+q_pert = Function(Vdg, name='pv_pert').assign(q0-q_basic)
 outfile = File("output.pvd")
-#outfile.write(qb)
-outfile.write(q0)
-#outfile.write(qpert)
+outfile.write(q_pert)
 
 t = 0.
 T = 25000.
@@ -142,8 +141,11 @@ while(t < (T-Dt/2)):
     print t, kinetic_energy, potential_energy, total_energy, enstrophy
     
     tdump += 1
-    if(tdump==dumpfreq):
+    if(tdump==dumpfreq): 
         tdump -= dumpfreq
         v.project(gradperp_h(psi0))
-        outfile.write(q0)
+        #outfile.write(q0)
+        q_pert = Function(Vdg, name='pv_pert').assign(q0-q_basic)
+        outfile.write(q_pert)
+
 
