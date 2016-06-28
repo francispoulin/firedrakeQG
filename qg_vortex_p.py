@@ -20,7 +20,7 @@ Ly   = 20.                                     # Meridonal length
 n0   = 100                                     # Spatial resolution
 mesh = PeriodicRectangleMesh(n0, n0, Lx, Ly,  direction="both", quadrilateral=True, reorder=None)
 
-p   = 2
+p   = 3
 Vdg = FunctionSpace(mesh,"DG",p)               # DG elements for Potential Vorticity (PV)
 Vcg = FunctionSpace(mesh,"CG",p)               # CG elements for Streamfunction
 Vu  = VectorFunctionSpace(mesh,"DG",p)          # DG elements for velocity
@@ -69,9 +69,9 @@ bc1 = [DirichletBC(Vcg, 0.0, 1),
 psi_problem = LinearVariationalProblem(Apsi,Lpsi,psi0)
 psi_solver = LinearVariationalSolver(psi_problem,
                                      solver_parameters={
-        'ksp_type':'cg',
-        'pc_type':'sor'
-        })
+                                         'ksp_type':'preonly',
+                                         'pc_type':'lu'
+                                     })
 
 # Make a gradperp operator
 gradperp = lambda u: as_vector((-u.dx(1), u.dx(0)))
