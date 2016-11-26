@@ -51,10 +51,10 @@ psi_solver = LinearVariationalSolver(psi_problem,
                                       })
 
 psi0.project(psi_soln)
-potential_energy = assemble(0.5*psi0*psi0)
+potential_energy = assemble(0.5*psi_soln*psi_soln*dx)
 print potential_energy
 
 outfile = File("outputpsi.pvd")
-outfile.write(psi0)
+outfile.write(psi_soln)
 
 

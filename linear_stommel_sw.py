@@ -55,7 +55,7 @@ sw_solver = LinearVariationalSolver(sw_problem,
 u, eta = sol.split()
 
 eta0.project(eta)
-potential_energy = assemble(0.5*eta0*eta0)
+potential_energy = assemble(0.5*eta0*eta0*dx)
 print potential_energy
 
 outfile = File("output.pvd")
