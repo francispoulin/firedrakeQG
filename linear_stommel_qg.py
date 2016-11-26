@@ -13,10 +13,13 @@ Vcg  = FunctionSpace(mesh,"CG",3)                    # CG elements for Streamfun
 Vdg  = FunctionSpace(mesh,"DG",1)                    # DG elements for Potential Vorticity (PV)
 Vcdg = VectorFunctionSpace(mesh,"DG",2)              # DG elements for velocity
 
+psi0 = Function(Vcg, name='Streamfunction') 
+
 # Boundary Conditions
-def boundary(x, on_boundary):
-	return on_boundary
-bc = DirichletBC(Vcg, 0.0, boundary)
+#def boundary(x, on_boundary):
+#	return on_boundary
+#bc = DirichletBC(Vcg, 0.0, boundary)
+bc = DirichletBC(Vcg, 0.0, (1, 2, 3, 4))
 
 # Physical parameters
 beta = Constant(1.0)                                 # Beta parameter
@@ -38,7 +41,6 @@ q0_soln, qn_soln = Function(Vdg), Function(Vcdg)
 Fwinds = Function(Vcg).interpolate(Expression("-tau*cos(pi*(x[1]-0.5))", tau=tau))
 a = -( r*(inner(nabla_grad(psi), nabla_grad(phi)) + F*psi*phi) - beta*phi*psi.dx(0) )*dx
 L = Fwinds*phi*dx
-#solve(a==L, psi_soln, bc)
 
 # Set up Elliptic inverter
 psi_problem = LinearVariationalProblem(a,L,psi_soln, bcs=bc)
@@ -48,7 +50,11 @@ psi_solver = LinearVariationalSolver(psi_problem,
                                          'pc_type':'sor'
                                       })
 
-#q0_soln = project(div(grad(psi_soln)) - F*psi_soln, DG)
+psi0.project(psi_soln)
+potential_energy = assemble(0.5*psi0*psi0)
+print potential_energy
 
-#plot(psi_soln)
-#interactive()
+outfile = File("outputpsi.pvd")
+outfile.write(psi0)
+
+
