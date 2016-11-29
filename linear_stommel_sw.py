@@ -50,7 +50,9 @@ sw_problem = LinearVariationalProblem(a, L, sol, bcs=bc)
 sw_solver = LinearVariationalSolver(sw_problem,
                                      solver_parameters={
                                          'ksp_type':'preonly',
-                                         'pc_type':'lu'
+                                         'pc_type':'lu',
+                                         'mat_type': 'aij',
+                                         "pc_factor_mat_solver_package": "mumps"
                                       })
 
 # solve for streamfunction
@@ -62,7 +64,7 @@ u, eta = sol.split()
 
 # Energies
 potential_energy = assemble(0.5*eta*eta*dx)
-kinetic_energy = assemble(0.5*u*u*dx)
+kinetic_energy = assemble(0.5*(u[0]*u[0]+u[1]*u[1])*dx)
 
 print kinetic_energy, potential_energy
 
@@ -70,10 +72,6 @@ print kinetic_energy, potential_energy
 p = plot(eta)
 p.show()
 
-"""
 outfile = File("outputsw.pvd")
 outfile.write(eta)
 
-#eta_out = Function(Vcg, name='eta').assign(eta)
-#outfile.write(eta_out)
-"""
