@@ -1,6 +1,5 @@
 from firedrake import *
 import numpy as np
-import matplotlib.pyplot as plt
 
 # Operators
 zcross   = lambda u: as_vector((-u[1],    u[0]))
@@ -47,17 +46,16 @@ a = r*inner(v,u)*dx - div(v)*eta*dx + lmbda*div(u)*dx + inner(fcor*v, zcross(u))
 L = Fwinds*v[0]*dx
 
 # Set up SW inverter
-
-solve(a == L, sol, bcs=bc)
-# Question 2: Why does this solver not work?
-"""
 sw_problem = LinearVariationalProblem(a, L, sol, bcs=bc)
 sw_solver = LinearVariationalSolver(sw_problem,
                                      solver_parameters={
-                                         'ksp_type':'cg',
-                                         'pc_type':'sor'
+                                         'ksp_type':'preonly',
+                                         'pc_type':'lu'
                                       })
-"""
+
+# solve for streamfunction
+sw_solver.solve()
+#solve(a == L, sol, bcs=bc)
 
 # Split
 u, eta = sol.split()
@@ -67,6 +65,10 @@ potential_energy = assemble(0.5*eta*eta*dx)
 kinetic_energy = assemble(0.5*u*u*dx)
 
 print kinetic_energy, potential_energy
+
+# Plot solutin
+p = plot(eta)
+p.show()
 
 """
 outfile = File("outputsw.pvd")

@@ -1,6 +1,6 @@
 from firedrake import *
 import numpy as np
-import matplotlib.pyplot as plt 
+#import matplotlib.pyplot as plt 
 
 # Geometry
 Lx   = 1.                                            # Zonal length
@@ -12,8 +12,6 @@ mesh = RectangleMesh(n0, n0, Lx, Ly,  reorder=None)
 Vcg  = FunctionSpace(mesh,"CG",3)                    # CG elements for Streamfunction
 Vdg  = FunctionSpace(mesh,"DG",1)                    # DG elements for Potential Vorticity (PV)
 Vcdg = VectorFunctionSpace(mesh,"DG",2)              # DG elements for velocity
-
-#psi0 = Function(Vcg, name='Streamfunction') 
 
 # Boundary Conditions
 bc = DirichletBC(Vcg, 0.0, (1, 2, 3, 4))
@@ -39,23 +37,20 @@ Fwinds = Function(Vcg).interpolate(Expression("-tau*cos(pi*(x[1]-0.5))", tau=tau
 a = -r*inner(grad(psi), grad(phi))*dx - F*psi*phi*dx + beta*phi*psi.dx(0)*dx 
 L =  Fwinds*phi*dx
 
-#Question: Why does this not solve this correctly?
-
-"""
 # Set up Elliptic inverter
 psi_problem = LinearVariationalProblem(a, L, psi_soln, bcs=bc)
 psi_solver = LinearVariationalSolver(psi_problem,
                                      solver_parameters={
-                                         'ksp_type':'cg',
-                                         'pc_type':'sor'
+                                         'ksp_type':'preonly',
+                                         'pc_type':'lu'
                                       })
-"""
 
-solve(a == L, psi_soln, bcs=bc)
+# solve for streamfunction
+psi_solver.solve()
 
-#Question: Why does this not plot the solution?
-#plt.plot(psi_soln)
-#plt.show()
+# Plot Solution
+p = plot(psi_soln)
+p.show()
 
 # Potential Energy
 potential_energy = assemble(0.5*psi_soln*psi_soln*dx)
