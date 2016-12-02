@@ -47,11 +47,12 @@ num_eigenvalues = 5                                 # Number of eigenvalues
 opts = PETSc.Options()
 
 opts.setValue("eps_gen_non_hermitian", None)
-opts.setValue("st_pc_factor_shift_type", "NONZERO")
+#opts.setValue("st_pc_factor_shift_type", "NONZERO")
 opts.setValue("eps_type", "krylovschur")
-opts.setValue("eps_spectrum", "target imaginary")
-##opts.setValue("eps_largest_imaginary", None)
-opts.setValue("eps_tol", 1e-10)
+#opts.setValue("eps_spectrum", "target imaginary")
+#opts.setValue("eps_largest_imaginary", None)
+#opts.setValue("eps_tol", 1e-10)
+#opts.setValue("spectral_shift", 3.14)
 
 es = SLEPc.EPS().create(comm=COMM_WORLD)
 es.setDimensions(num_eigenvalues)
