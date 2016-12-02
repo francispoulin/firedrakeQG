@@ -42,20 +42,20 @@ a = inner(Fcor*v,zcross(u))*dx \
 m = Ro*inner(v, u)*dx + Ro*F*lmbda*eta*dx
 
 # Assemble Weak Form into a PETSc Matrix
-petsc_a = assemble(a, bcs=bc).M.handle
-petsc_m = assemble(m).M.handle
+petsc_a = assemble(a, mat_type='aij', bcs=bc).M.handle
+petsc_m = assemble(m, mat_type='aij').M.handle
 
 num_eigenvalues = 5                                 # Number of eigenvalues
 
 opts = PETSc.Options()
 
 opts.setValue("eps_gen_non_hermitian", None)
-#opts.setValue("st_pc_factor_shift_type", "NONZERO")
+opts.setValue("st_pc_factor_shift_type", "NONZERO")
 opts.setValue("eps_type", "krylovschur")
-#opts.setValue("eps_spectrum", "target imaginary")
+opts.setValue("eps_spectrum", "target imaginary")
 #opts.setValue("eps_largest_imaginary", None)
-#opts.setValue("eps_tol", 1e-10)
-#opts.setValue("spectral_shift", 3.14)
+opts.setValue("eps_tol", 1e-10)
+opts.setValue("spectral_shift", 3.14)
 
 es = SLEPc.EPS().create(comm=COMM_WORLD)
 es.setDimensions(num_eigenvalues)
@@ -63,11 +63,10 @@ es.setOperators(petsc_a, petsc_m)
 es.setFromOptions()
 es.solve()
 
-#nconv = es.getConverged()
-#print nconv
+nconv = es.getConverged()
+print nconv
 
-"""
-eigenmodes_real, eigenmodes_imag = Function(Vcg), Function(Vcg)
+eigenmodes_real, eigenmodes_imag = Function(G), Function(G)
 
 # Find eigenvalues an eigenvectors
 eigenvaluer, eigenvaluei = [], []
@@ -76,46 +75,18 @@ eigefunctionr, eigenfunctioni = [], []
 vr, vi = petsc_a.getVecs()
 for i in range(nconv):
     lam = es.getEigenpair(i, vr, vi)
+    print lam
     eigenvaluer.append(lam.real)
     eigenvaluei.append(lam.imag)
-    #eigenfunction.vector()[:] = vr
-    vr_plot = vr
-    #p = plot(vr_plot)
-    #p.show()
-    
+
 eigenmodes_real.vector()[:], eigenmodes_imag.vector()[:] = vr, vi
 
-p = plot(eigenmodes_real)
+ur, etar = eigenmodes_real.split()
+ui, etai = eigenmodes_imag.split()
+
+p = plot(etar)
 p.show()
-p = plot(eigenmodes_imag)
+p = plot(etai)
 p.show()
 
-#print eigenvaluer
-print eigenvaluei
-#print eigenvalue[0], eigenvalue[1]
-"""
-""""
-# Build a SLEPc problem 
-E = SLEPc.EPS()
-E.create(comm=mesh.comm)
-E.setOperators(A, M)
-E.solve()
 
-nconv = E.getConverged()
-
-print nconv
-
-# Create the results vectors
-vr, wr = A.getVecs()
-vi, wi = A.getVecs()
-evr, evi = [], []
-for i in range(nconv):
-    k = E.getEigenpair(i, vr, vi)
-    evr.append(k.real)
-    evi.append(k.imag)
-
-print evr, evi
-#p = plot(vr)
-#p.show()
-
-"""
