@@ -17,6 +17,9 @@ DG = VectorElement("DG", mesh.ufl_cell(), 1)
 CG = FiniteElement("CG", mesh.ufl_cell(), 2)
 G = FunctionSpace(mesh, MixedElement((DG, CG)))
 
+# Boundary Condtions
+bc = DirichletBC(G.sub(0), Constant((0, 0)), (1, 2, 3, 4))
+
 #TRIAL/TEST FUNCTIONS
 (u, eta) = TrialFunctions(G)
 (v, lmbda) = TestFunctions(G)
@@ -39,7 +42,7 @@ a = inner(Fcor*v,zcross(u))*dx \
 m = Ro*inner(v, u)*dx + Ro*F*lmbda*eta*dx
 
 # Assemble Weak Form into a PETSc Matrix
-petsc_a = assemble(a).M.handle
+petsc_a = assemble(a, bcs=bc).M.handle
 petsc_m = assemble(m).M.handle
 
 num_eigenvalues = 5                                 # Number of eigenvalues
