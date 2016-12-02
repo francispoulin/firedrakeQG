@@ -13,16 +13,15 @@ n0   = 25                                            # Spatial resolution
 mesh = RectangleMesh(n0, n0, Lx, Ly,  reorder=None) 
 
 #FUNCTION & VECTOR SPACES
-DG = VectorElement("DG", mesh.ufl_cell(), 1)
-CG = FiniteElement("CG", mesh.ufl_cell(), 2)
-G = FunctionSpace(mesh, MixedElement((DG, CG)))
+Vdg = VectorFunctionSpace(mesh, "DG", 1)
+Vcg = FunctionSpace(mesh, "CG", 2)
+Z   = Vdg*Vcg
 
-# Boundary Condtions
-bc = DirichletBC(G.sub(0), Constant((0, 0)), (1, 2, 3, 4))
+bc = DirichletBC(Z.sub(0), Constant((0, 0)), (1,2,3,4))
 
 #TRIAL/TEST FUNCTIONS
-(u, eta) = TrialFunctions(G)
-(v, lmbda) = TestFunctions(G)
+(u, eta) = TrialFunctions(Z)
+(v, lmbda) = TestFunctions(Z)
 
 # EIGENVALUE SOLs
 eigenvalues_real = []
@@ -45,7 +44,7 @@ m = Ro*inner(v, u)*dx + Ro*F*lmbda*eta*dx
 petsc_a = assemble(a, mat_type='aij', bcs=bc).M.handle
 petsc_m = assemble(m, mat_type='aij').M.handle
 
-num_eigenvalues = 5                                 # Number of eigenvalues
+num_eigenvalues = 2                                 # Number of eigenvalues
 
 opts = PETSc.Options()
 
@@ -66,27 +65,25 @@ es.solve()
 nconv = es.getConverged()
 print nconv
 
-eigenmodes_real, eigenmodes_imag = Function(G), Function(G)
+em_real, em_imag     = Function(Z), Function(Z)
+u_real, u_imag       = Function(Vdg), Function(Vdg)
+eta_real, eta_imag   = Function(Vcg), Function(Vcg) 
+eval_real, eval_imag = [], []
 
 # Find eigenvalues an eigenvectors
-eigenvaluer, eigenvaluei = [], []
-eigefunctionr, eigenfunctioni = [], []
-
 vr, vi = petsc_a.getVecs()
+em_real, em_imag = MixedFunctionSpace(Z, vr), MixedFunctionSpace(Z, vr)
 for i in range(nconv):
     lam = es.getEigenpair(i, vr, vi)
     print lam
-    eigenvaluer.append(lam.real)
-    eigenvaluei.append(lam.imag)
+    eval_real.append(lam.real)
+    eval_imag.append(lam.imag)
 
-eigenmodes_real.vector()[:], eigenmodes_imag.vector()[:] = vr, vi
+    u_real, eta_real = em_real.split()
+    #u_imag, eta_imag = em_imag.split()
 
-ur, etar = eigenmodes_real.split()
-ui, etai = eigenmodes_imag.split()
+    p = plot(eta_real)
+    p.show()
 
-p = plot(etar)
-p.show()
-p = plot(etai)
-p.show()
 
 
