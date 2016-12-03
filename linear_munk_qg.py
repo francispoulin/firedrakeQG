@@ -1,10 +1,7 @@
 from firedrake import *
 import numpy as np
-<<<<<<< HEAD
-import matplotlib.pyplot as plt 
-=======
+import ufl
 #import matplotlib.pyplot as plt 
->>>>>>> 61ee2dee86887d2fb8938c6229f63272ab31d0f1
 
 # Geometry
 Lx   = 1.                                            # Zonal length
@@ -12,24 +9,40 @@ Ly   = 1.                                            # Meridonal length
 n0   = 50                                            # Spatial resolution
 mesh = RectangleMesh(n0, n0, Lx, Ly,  reorder=None) 
 
+
 # Function and Vector Spaces
 Vcg  = FunctionSpace(mesh,"CG",3)                    # CG elements for Streamfunction
 Vdg  = FunctionSpace(mesh,"DG",1)                    # DG elements for Potential Vorticity (PV)
 Vcdg = VectorFunctionSpace(mesh,"DG",2)              # DG elements for velocity
 
-<<<<<<< HEAD
-#psi0 = Function(Vcg, name='Streamfunction') 
 
-=======
->>>>>>> 61ee2dee86887d2fb8938c6229f63272ab31d0f1
 # Boundary Conditions
 bc = DirichletBC(Vcg, 0.0, (1, 2, 3, 4))
 
+
 # Physical parameters
+alpha =Constant("10.0")								#Penalty parameter
 beta = Constant("1.0")                                 # Beta parameter
 F    = Constant("1.0")                                 # Burger number
-r    = Constant("0.2")                                 # Bottom drag
+nu    = Constant("0.01")                                 # Lateral viscosity
 tau  = Constant("0.001")                               # Wind Forcing
+Fwinds = Function(Vcg).interpolate(Expression("-tau*cos(pi*(x[1]-0.5))", tau=tau))
+
+
+# Define Cell Size Function
+def CellSize(mesh):
+    mesh.init()
+    return 2.0 * ufl.Circumradius(mesh)
+h = CellSize(mesh)
+h_avg = (h('+') + h('-'))/2.0
+
+
+# Define Facet Normal
+def FacetNormal(mesh):
+    mesh.init()
+    return ufl.FacetNormal(mesh)
+n = FacetNormal(mesh)
+
 
 # Test Functions
 phi, p, v = TestFunction(Vcg), TestFunction(Vdg), TestFunction(Vcdg)
@@ -37,18 +50,20 @@ phi, p, v = TestFunction(Vcg), TestFunction(Vdg), TestFunction(Vcdg)
 # Trial Functions
 psi, q, u = TrialFunction(Vcg), TrialFunction(Vdg), TrialFunction(Vcdg)
 
+
 # Solution Functions
 psi_soln, u_soln = Function(Vcg, name="Streamfunction"), Function(Vcdg)
 q0_soln, qn_soln = Function(Vdg), Function(Vcdg)
 
+
 # Define Winds and Weak Form
-Fwinds = Function(Vcg).interpolate(Expression("-tau*cos(pi*(x[1]-0.5))", tau=tau))
-a = -r*inner(grad(psi), grad(phi))*dx - F*psi*phi*dx + beta*phi*psi.dx(0)*dx 
+a = - nu*inner(div(grad(psi)), div(grad(phi)))*dx \
+  + nu*inner(avg(div(grad(psi))), jump(grad(phi), n))*dS + nu*inner(jump(grad(psi), n), avg(div(grad(phi))))*dS \
+  - nu*(alpha/h_avg)*inner(jump(grad(psi),n), jump(grad(phi),n))*dS \
+  - nu*F*inner(nabla_grad(psi), nabla_grad(phi))*dx + beta*psi.dx(0)*phi*dx
 L =  Fwinds*phi*dx
 
-#Question: Why does this not solve this correctly?
 
-"""
 # Set up Elliptic inverter
 psi_problem = LinearVariationalProblem(a, L, psi_soln, bcs=bc)
 psi_solver = LinearVariationalSolver(psi_problem,
@@ -56,30 +71,21 @@ psi_solver = LinearVariationalSolver(psi_problem,
                                          'ksp_type':'preonly',
                                          'pc_type':'lu'
                                       })
-"""
 
-solve(a == L, psi_soln, bcs=bc)
-
-#Question: Why does this not plot the solution?
-#plt.plot(psi_soln)
-#plt.show()
-
-<<<<<<< HEAD
-=======
 # solve for streamfunction
 psi_solver.solve()
+
 
 # Plot Solution
 p = plot(psi_soln)
 p.show()
 
->>>>>>> 61ee2dee86887d2fb8938c6229f63272ab31d0f1
+
 # Potential Energy
 potential_energy = assemble(0.5*psi_soln*psi_soln*dx)
 print potential_energy
 
+
 # Output to a  file
 outfile = File("outputQG.pvd")
 outfile.write(psi_soln)
-
-

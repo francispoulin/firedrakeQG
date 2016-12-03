@@ -54,16 +54,23 @@ solve(a == L, sol, bcs=bc)
 sw_problem = LinearVariationalProblem(a, L, sol, bcs=bc)
 sw_solver = LinearVariationalSolver(sw_problem,
                                      solver_parameters={
-                                         'ksp_type':'cg',
-                                         'pc_type':'sor'
+                                         'ksp_type':'preonly',
+                                         'pc_type':'lu',
+                                         'mat_type': 'aij',
+                                         "pc_factor_mat_solver_package": "mumps"
                                       })
 """
+
+# solve for streamfunction
+sw_solver.solve()
+#solve(a == L, sol, bcs=bc)
 
 # Split
 u, eta = sol.split()
 
 # Energies
 potential_energy = assemble(0.5*eta*eta*dx)
+<<<<<<< HEAD
 kinetic_energy = assemble(0.5*u*u*dx)
 
 print kinetic_energy, potential_energy
@@ -75,3 +82,16 @@ outfile.write(eta)
 #eta_out = Function(Vcg, name='eta').assign(eta)
 #outfile.write(eta_out)
 """
+=======
+kinetic_energy = assemble(0.5*(u[0]*u[0]+u[1]*u[1])*dx)
+
+print kinetic_energy, potential_energy
+
+# Plot solutin
+p = plot(eta)
+p.show()
+
+outfile = File("outputsw.pvd")
+outfile.write(eta)
+
+>>>>>>> 61ee2dee86887d2fb8938c6229f63272ab31d0f1
