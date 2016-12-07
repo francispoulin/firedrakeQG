@@ -50,12 +50,12 @@ opts = PETSc.Options()
 
 opts.setValue("eps_gen_non_hermitian", None)
 opts.setValue("st_pc_factor_shift_type", "NONZERO")
-opts.setValue("eps_type", "lapack")
-#opts.setValue("eps_type", "krylovschur")
+#opts.setValue("eps_type", "lapack")
+opts.setValue("eps_type", "krylovschur")
 opts.setValue("eps_spectrum", "target imaginary")
-#opts.setValue("eps_smallest_imaginary", None)
+opts.setValue("eps_target", 3.14)
 opts.setValue("eps_tol", 1e-10)
-opts.setValue("spectral_shift", 3.14)
+opts.setValue("st_type", "sinvert")
 
 es = SLEPc.EPS().create(comm=COMM_WORLD)
 es.setDimensions(num_eigenvalues)
@@ -73,18 +73,30 @@ eval_real, eval_imag = [], []
 
 # Find eigenvalues an eigenvectors
 vr, vi = petsc_a.getVecs()
-em_real, em_imag = MixedFunctionSpace(Z, vr), MixedFunctionSpace(Z, vr)
+em_real, em_imag = Function(Z), Function(Z)
+output = File('eigenmodes.pvd')
 for i in range(nconv):
-    lam = es.getEigenpair(i, vr, vi)
-    print lam
-    eval_real.append(lam.real)
-    eval_imag.append(lam.imag)
+    with em_real.dat.vec as vr:
+        with em_imag.dat.vec as vi:
+            lam = es.getEigenpair(i, vr, vi)
+            print lam
+            eval_real.append(lam.real)
+            eval_imag.append(lam.imag)
 
-    u_real, eta_real = em_real.split()
-    #u_imag, eta_imag = em_imag.split()
+            u_real, eta_real = em_real.split()
+            u_imag, eta_imag = em_imag.split()
+            print u_real.dat.data.min(), u_real.dat.data.max()
+            print u_imag.dat.data.min(), u_imag.dat.data.max()
+            print eta_real.dat.data.min(), eta_real.dat.data.max()
+            print eta_imag.dat.data.min(), eta_imag.dat.data.max()
 
-    #p = plot(eta_real)
-    #p.show()
+        output.write(u_real, eta_real, time=i)
+#        p = plot(eta_real)
+#        p.show()
+#        p.savefig('pr%s'%str(i))
+#        p = plot(eta_imag)
+#        p.show()
+#        p.savefig('pi%s'%str(i))
 
 
 
