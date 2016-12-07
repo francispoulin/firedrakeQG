@@ -85,10 +85,6 @@ for i in range(nconv):
 
             u_real, eta_real = em_real.split()
             u_imag, eta_imag = em_imag.split()
-            print u_real.dat.data.min(), u_real.dat.data.max()
-            print u_imag.dat.data.min(), u_imag.dat.data.max()
-            print eta_real.dat.data.min(), eta_real.dat.data.max()
-            print eta_imag.dat.data.min(), eta_imag.dat.data.max()
 
         output.write(u_real, eta_real, time=i)
 #        p = plot(eta_real)
