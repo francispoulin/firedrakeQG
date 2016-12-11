@@ -1,6 +1,5 @@
 from firedrake import *
 import numpy as np
-import ufl
 
 #OPERATORS
 gradperp = lambda i: as_vector((-i.dx(1),i.dx(0)))
@@ -21,33 +20,57 @@ bc = DirichletBC(Vcg, 0.0, (1, 2, 3, 4))
 
 # Physical parameters and Winds
 beta = Constant("1.0")                                 # Beta parameter
-#F    = Constant("1.0")                                 # Burger number
-#r    = Constant("0.2")                                 # Bottom drag
-tau  = Constant("0.001")                               # Wind Forcing
+F    = Constant("1.0")                                 # Burger number
+r    = Constant("1.0")                                 # Bottom drag
+tau  = Constant("0.00001")                             # Wind Forcing
 Fwinds = Function(Vcg).interpolate(Expression("-tau*cos(pi*(x[1]-0.5))", tau=tau))
 
 # Test and Trial Functions
-phi, p, v = TestFunction(Vcg), TestFunction(Vdg), TestFunction(Vcdg)
-psi, q, u = TrialFunction(Vcg), TrialFunction(Vdg), TrialFunction(Vcdg)
+phi = TestFunction(Vcg)
+psi = TrialFunction(Vcg)
 
 # Solution Functions
-psi_soln, u_soln = Function(Vcg, name="Streamfunction"), Function(Vcdg)
-q0_soln, qn_soln = Function(Vdg), Function(Vcdg)
+psi_lin = Function(Vcg, name="Linear Streamfunction")
+psi_non = Function(Vcg, name="Nonlinear Streamfunction")
 
 # Define Weak Form
-L =  - inner(grad(phi),gradperp(psi))*div(grad(psi))*dx + beta*phi*psi.dx(0)*dx  - Fwinds*phi*dx
+a = -r*inner(grad(phi), grad(psi))*dx - F*phi*psi*dx + beta*phi*psi.dx(0)*dx 
+L =  Fwinds*phi*dx
+
+# Set up Elliptic inverter for Linear Problem
+linear_problem = LinearVariationalProblem(a, L, psi_lin, bcs=bc)
+linear_solver = LinearVariationalSolver(linear_problem,
+                                     solver_parameters={
+                                         'ksp_type':'preonly',
+                                         'pc_type':'lu'
+                                      })
+
+# Solve the linear problem
+linear_solver.solve()
+
+# Plot Solution
+#p = plot(psi_lin)
+#p.show()
+
+# Use linear solution as a good guess
+psi_non.assign(psi_lin)
+
+# Define Weak Form
+F =  -r*inner(grad(psi), grad(psi_non))*dx - F*psi*psi_non*dx + beta*psi*psi_non.dx(0)*dx \
+     - inner(grad(psi),gradperp(psi_non))*div(grad(psi_non))*dx \
+     - Fwinds*psi*dx
 
 # Set up Elliptic inverter
-psi_problem = NonlinearVariationalProblem(L, psi_soln, bcs=bc)
-psi_solver = NonlinearVariationalSolver(psi_problem,
+nonlinear_problem = NonlinearVariationalProblem(F, psi_non, bcs=bc)
+nonlinear_solver = NonlinearVariationalSolver(nonlinear_problem,
                                      solver_parameters={
                                          'snes_type': 'newtonls',
                                          'ksp_type':'preonly',
                                          'pc_type':'lu'
                                       })
-
-
 """
+
+
 # solve for streamfunction 
 psi_solver.solve()
 
@@ -56,11 +79,10 @@ p = plot(psi_soln)
 p.show()
 
 # Potential Energy
-potential_energy = assemble(0.5*psi_soln*psi_soln*dx)
+
 print potential_energy
 
 # Output to a  file
 outfile = File("outputQG.pvd")
 outfile.write(psi_soln)
 """
-
