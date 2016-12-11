@@ -56,12 +56,12 @@ linear_solver.solve()
 psi_non.assign(psi_lin)
 
 # Define Weak Form
-F =  -r*inner(grad(phi), grad(psi_non))*dx - F*phi*psi_non*dx + beta*phi*psi_non.dx(0)*dx \
+G =  -r*inner(grad(phi), grad(psi_non))*dx - F*phi*psi_non*dx + beta*phi*psi_non.dx(0)*dx \
      - inner(grad(phi),gradperp(psi_non))*div(grad(psi_non))*dx \
      - Fwinds*phi*dx
 
 # Set up Elliptic inverter
-nonlinear_problem = NonlinearVariationalProblem(F, psi_non, bcs=bc)
+nonlinear_problem = NonlinearVariationalProblem(G, psi_non, bcs=bc)
 nonlinear_solver = NonlinearVariationalSolver(nonlinear_problem,
                                      solver_parameters={
                                          'snes_type': 'newtonls',
