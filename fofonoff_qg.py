@@ -21,7 +21,7 @@ bc = DirichletBC(Vcg, 0.0, (1, 2, 3, 4))
 # Physical parameters and Winds
 beta = Constant("1.0")                                 # Beta parameter
 F    = Constant("1.0")                                 # Burger number
-r    = Constant("1.0")                                 # Bottom drag
+r    = Constant("0.3")                                 # Bottom drag
 tau  = Constant("0.00001")                             # Wind Forcing
 Fwinds = Function(Vcg).interpolate(Expression("-tau*cos(pi*(x[1]-0.5))", tau=tau))
 
@@ -56,9 +56,9 @@ linear_solver.solve()
 psi_non.assign(psi_lin)
 
 # Define Weak Form
-F =  -r*inner(grad(psi), grad(psi_non))*dx - F*psi*psi_non*dx + beta*psi*psi_non.dx(0)*dx \
-     - inner(grad(psi),gradperp(psi_non))*div(grad(psi_non))*dx \
-     - Fwinds*psi*dx
+F =  -r*inner(grad(phi), grad(psi_non))*dx - F*phi*psi_non*dx + beta*phi*psi_non.dx(0)*dx \
+     - inner(grad(phi),gradperp(psi_non))*div(grad(psi_non))*dx \
+     - Fwinds*phi*dx
 
 # Set up Elliptic inverter
 nonlinear_problem = NonlinearVariationalProblem(F, psi_non, bcs=bc)
@@ -68,15 +68,15 @@ nonlinear_solver = NonlinearVariationalSolver(nonlinear_problem,
                                          'ksp_type':'preonly',
                                          'pc_type':'lu'
                                       })
-"""
-
 
 # solve for streamfunction 
-psi_solver.solve()
+nonlinear_solver.solve()
 
 # Plot Solution
-p = plot(psi_soln)
+p = plot(psi_non)
 p.show()
+
+"""
 
 # Potential Energy
 
