@@ -9,7 +9,7 @@ zcross = lambda i: as_vector((-i[1],i[0]))
 # Geometry
 Lx   = 1.                                            # Zonal length
 Ly   = 1.                                            # Meridonal length
-n0   = 25                                            # Spatial resolution
+n0   = 5                                             # Spatial resolution
 mesh = RectangleMesh(n0, n0, Lx, Ly,  reorder=None) 
 
 #FUNCTION & VECTOR SPACES
@@ -44,15 +44,16 @@ m = Ro*inner(v, u)*dx + Ro*F*lmbda*eta*dx
 petsc_a = assemble(a, mat_type='aij', bcs=bc).M.handle
 petsc_m = assemble(m, mat_type='aij').M.handle
 
-num_eigenvalues = 2                                 # Number of eigenvalues
+num_eigenvalues = 5                                 # Number of eigenvalues
 
 opts = PETSc.Options()
 
 opts.setValue("eps_gen_non_hermitian", None)
 opts.setValue("st_pc_factor_shift_type", "NONZERO")
-opts.setValue("eps_type", "krylovschur")
+opts.setValue("eps_type", "lapack")
+#opts.setValue("eps_type", "krylovschur")
 opts.setValue("eps_spectrum", "target imaginary")
-#opts.setValue("eps_largest_imaginary", None)
+#opts.setValue("eps_smallest_imaginary", None)
 opts.setValue("eps_tol", 1e-10)
 opts.setValue("spectral_shift", 3.14)
 
@@ -82,8 +83,8 @@ for i in range(nconv):
     u_real, eta_real = em_real.split()
     #u_imag, eta_imag = em_imag.split()
 
-    p = plot(eta_real)
-    p.show()
+    #p = plot(eta_real)
+    #p.show()
 
 
 
