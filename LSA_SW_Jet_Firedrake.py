@@ -28,16 +28,19 @@ Ly   = 10.0
 Uj   = 0.5
 n0   = 200
 mesh = IntervalMesh(n0, Ly)
-x = SpatialCoordinate(mesh)
+x    = SpatialCoordinate(mesh)
 
 # Define parameters
 
 beta = Constant('0.0')
 Bu   = Constant('0.0004')
 Ro   = Constant('0.25')
+
 # Profile
 
 profile = 'bickley'
+
+# Print parameters
 
 print('Ro      = ', float(Ro))
 print('Bu      = ', float(Bu))
@@ -57,7 +60,12 @@ bc = DirichletBC(Z.sub(1), 0.0, "on_boundary")
 # Define modes 
 
 emodes_real, emodes_imag = Function(V), Function(V)
+# Define modes 
 
+em_real,  em_imag  = Function(Z), Function(Z)
+u_real,   u_imag   = Function(V), Function(V)
+v_real,   v_imag   = Function(V), Function(V)
+eta_real, eta_imag = Function(V), Function(V)
 
 # TEST/TRIAL FUNCTIONS
 (u, v, eta)      = TrialFunctions(Z)
@@ -65,9 +73,8 @@ emodes_real, emodes_imag = Function(V), Function(V)
 
 # Define Basic State
 
-#FJP: Do we need Eb or can we remove it?
 Ub  = Function(V).interpolate(1./pow(cosh(x[0]-Ly/2),2))
-dUb = Function(V).interpolate(1./pow(cosh(x[0]-Ly/2),2))    # FJP: compute correctly
+dUb = Function(V).interpolate(-2.*sinh(x[0]-Ly/2)/pow(cosh(x[0]-Ly/2),3))    # FJP: compute correctly
 Eb  = Function(V).interpolate(-tanh(x[0]-Ly/2))             # FJP: remove?
 Hb  = Function(V).interpolate(1. + Ro*Bu*Eb)
 
@@ -76,12 +83,13 @@ Hb  = Function(V).interpolate(1. + Ro*Bu*Eb)
 #plot(Hb)
 #plt.show()
 
-
 num_eigenvalues = 4
 
 # Wavenumber
-dk   = 1.0
-kk   = np.arange(dk, 2.0, dk)
+dkk = 5e-2
+kk = np.arange(0.5 - dkk,.5,dkk)
+#dk   = 0.05
+#kk   = np.arange(dk, 2., dk)
 kL   = len(kk)
 egs_re  = np.zeros((len(kk),num_eigenvalues))
 egs_im  = np.zeros((len(kk),num_eigenvalues))
@@ -93,10 +101,10 @@ for k in kk:
 
     # Define Weak form
     
-    a =   ( (Ub*phi             - 1./(Ro*k2)*psi          + 1./Ro*Hb*vphi)*u )*dx \
-        + ( ((dUb - psi/Ro)*phi + Ub*psi                  - 1./Ro*Hb*vphi.dx(0))*v )*dx \
-        + ( 1./Ro*phi*eta       - 1./(Ro*k2)*psi*eta.dx(0) + vphi*Ub )*dx
-    m = (phi*u + psi*v + vphi*eta)*dx
+    a =   ( (  Ub*phi           - psi/(Ro*k2)           + Hb/(Ro*Bu)*vphi)*u )*dx \
+        + ( ( (dUb - 1./Ro)*phi + Ub*psi                - Hb/(Ro*Bu)*vphi.dx(0) )*v )*dx \
+        + (    phi*eta/Ro       - psi*eta.dx(0)/(Ro*k2) + Ub*vphi*eta )*dx           
+    m =       (phi*u + psi*v + vphi*eta)*dx
     
     # Build Petsc operators
     
@@ -108,8 +116,8 @@ for k in kk:
     opts = PETSc.Options()
     opts.setValue("eps_gen_non_hermitian", None)
     opts.setValue("st_pc_factor_shift_type", "NONZERO")
-    #opts.setValue("eps_type", "lapack")
-    opts.setValue("eps_type", "krylovschur")
+    opts.setValue("eps_type", "lapack")
+    #opts.setValue("eps_type", "krylovschur")
     opts.setValue("eps_largest_imaginary", None)
     opts.setValue("eps_tol", 1e-10)
 
@@ -125,19 +133,25 @@ for k in kk:
 
     nconv = es.getConverged()
     imax = min(nconv, num_eigenvalues)
-    for i in range(imax):
-        vr, vi = petsc_a.getVecs()
-
-        lam = es.getEigenpair(i, vr, vi)
-        
-        egs_re[cnt,i] = k*lam.real
-        egs_im[cnt,i] = k*lam.imag
     
-    # Find eigenfunctions
+    for i in range(imax):
+        with em_real.dat.vec as vr:
+            with em_imag.dat.vec as vi:
+                lam = es.getEigenpair(i, vr, vi)
+                #print ("Iteration #: "), i, ("| Real Eigenfrequency: "), lam.real, ("| Imag Eigenfrequency: "), lam.imag
+
+                egs_re[cnt,i] = k*lam.real
+                egs_im[cnt,i] = k*lam.imag
+
+                u_real, v_real, eta_real = em_real.split()
+                u_imag, v_imag, eta_imag = em_imag.split()
+    
+    ## Find eigenfunctions
     #emodes_real.vector()[:], emodes_imag.vector()[:] = vr, vi
     #print "Leading eigenvalue is:", lam, " for cnt = ", cnt, " with nconv = ", nconv
-    
+    print k, egs_im[cnt,0]
     cnt += 1
     
 print np.max(abs(egs_im))
+
 
